@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>upload file - file uploader</title>
+  <script src="/fileFilter.js" defer></script>
+</head>
+<body>
+  <%- include('header') %>
+
+  <form action="/upload" method="post">
+    <fieldset>
+      <legend>Upload your stuff</legend>
+
+      <label class="fileLabel" for="upload-file">max size: 512kb</label>
+      <input type="file" name="upload-file" id="upload-file" />
+    </fieldset>
+  </form>
+
+  <a href="/">back</a>
+</body>
+</html>
