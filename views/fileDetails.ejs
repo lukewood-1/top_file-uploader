@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File details - <%= file.name %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <%- include('header') %>
+
+  <main>
+    <div class="file-details">
+      <div>
+        <p class="file-title"><%= file.name %></p>
+        <a href="/main/explorer/dir:<%= file.assFolder.id %>">Back to <img src="/icons/folder.svg" alt=""><%= file.assFolder.name %></a>
+      </div>
+
+      <div class="file-portrait">
+        <p><%= file.name %></p>
+        <p><%= file.extension %></p>
+      </div>
+
+      <div class="file-stats">
+        <ul>
+          <li>Name: <%= file.name %></li>
+          <li>Size: <%= file.size %></li>
+          <li>Upload date: <%= file.uploadDate %></li>
+          <li>Upload time: <%= file.uploadTime %></li>
+          <li>Associated folder: <a href="/main/explorer/dir:<%= file.assFolder.id %>"><img src="/icons/folder.svg" alt=""><%= file.assFolder.name %></a></li>
+          <li><a href="/main/download/file:<%= file.id %>"><button type="button">Download file</button></a></li>
+          <% if(locals.user !== undefined) { %>
+            <li>
+              <form action="/main/delete" method="POST">
+                <input type="text" name="fileId" value="<%= file.id %>" hidden />
+                <input type="text" name="fileFolder" value="<%= file.assFolder.id %>" hidden />
+
+                <button type="button" popovertarget="confirm-delete" popovertargetaction="show">delete</button>
+                <div id="confirm-delete" popover>
+                  <h2>Are you sure you wanna delete this file? This action cannot be undone.</h2>
+
+                  <button popovertarget="confirm-delete" popovertargetaction="hide">No</button>
+                  <button type='submit'>Yes</button>
+                </div>
+              </form>
+            </li>
+
+            <li>
+              <button popovertarget="rename-file">Rename file</button>
+              <div id="rename-file" popover>
+                <form method="POST" action="/main/rename">
+                  <fieldset>
+                    <legend>Rename file</legend>
+                    <label for="rename-input">from <%= file.name %> to: </label>
+                    <input type="text" id="rename-input" name="renameInput" />
+
+                    <input type="number" name="fileFolder" value="<%= file.assFolder.id %>" hidden />
+                    <input type="number" name="fileId" value="<%= file.id %>" hidden />
+
+                    <button type="submit">rename</button>
+                  </fieldset>
+                </form>
+              </div>
+            </li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <%- include('footer') %>
+</body>
+</html>

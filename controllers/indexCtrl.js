@@ -1,22 +1,17 @@
-const indexGet = (req, res) => {
-  res.render('index', {
-    user: req.user
-  });
-}
+import { orm } from "../db/queries.js";
 
-async function uploadPagePost(req, res){
-  // const { file } = req.body;
-
-  // console.log(file);
-
-  console.log(req.body, req.file)
-
-  res.redirect('/');
+const indexGet = async (req, res) => {
+  try {
+    res.render('index', {
+      user: req.user,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 const indexCtrl = {
   indexGet,
-  uploadPagePost
 };
 
 export default indexCtrl

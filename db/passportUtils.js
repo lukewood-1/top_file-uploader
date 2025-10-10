@@ -3,12 +3,10 @@ import db from "./queries.js";
 import bcrypt from 'bcrypt';
 import passport from "passport";
 import { Strategy } from "passport-local";
-import pgSession from 'connect-pg-simple';
 import session from "express-session";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { PrismaClient } from "@prisma/client";
 
-const PgStore = pgSession(session);
 const store = new PrismaSessionStore(
   new PrismaClient(),
   {

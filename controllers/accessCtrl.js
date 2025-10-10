@@ -64,12 +64,34 @@ const signUpPost = [
         return;
       }
 
-      await orm.user.create({
-        data: {
-          username: username,
-          password: hashedPassword
+      const topId = await orm.user.findFirst({
+        orderBy: {
+          id: 'desc'
+        },
+        select: {
+          id: true
         }
       });
+      console.log('topId: ', topId);
+
+      const topFolder = await orm.folder.findFirst();
+
+      const newUser = await orm.user.create({
+        data: {
+          username: username,
+          password: hashedPassword,
+        }
+      });
+      console.log('newUser: ', newUser);
+
+      const newFolder = await orm.folder.create({
+        data: {
+          name: `${newUser.username}_home`,
+          userId: { connect: { id: newUser.id } },
+        }
+      });
+      console.log('newUser folder: ', newFolder);
+
       res.redirect('/access/log-in');
     } catch (err) {
       console.error(err);

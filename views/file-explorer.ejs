@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File explorer - <%= data.directories.current.name %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <%- include('header') %>
+
+  <main>
+    <div class="navbar">
+      <ul>
+        <li><a href="/main/dashboard">back to home folder</a></li>
+      </ul>
+    </div>
+
+    <div class="create-folder">
+      <h2>Create new folder</h2>
+
+      <form class="new-folder" action="/main/explorer/create-folder" method="POST">
+        <label for="create-folder">New folder? name: </label>
+        <input type="text" name="newFolder" id="create-folder" size="20" />
+
+        <label for="parentFolder">parent folder: </label>
+        <select name="parentFolder" id="parentFolder">
+          <% data.directories.userFolders.forEach(dir => { %>
+            <option value="<%= dir.id %>"><%= dir.name %></option>
+          <% }) %>
+        </select>
+
+        <input type="number" name="userRootFolder" value="<%= data.directories.current.id %>" hidden />
+
+        <button type="submit">create</button>
+      </form>
+    </div>
+    
+    <div class="directory-view">
+      <h2>File explorer - <%= data.directories.current.name %> <img src="/icons/folder.svg" alt="folder icon"> </h2>
+
+      <% if(data.directories.parent){ %>
+        <a class="folder" href="/main/explorer/dir:<%= data.directories.parent.id %>">
+          <img src="/icons/folder.svg" alt="folder icon">
+          <p><%= data.directories.parent.name %></p>
+        </a>
+      <% } %>
+
+      <% if(data.files.length > 0 || data.directories.current !== undefined){ %>
+        <% if(data.directories.children.length > 0){ %>
+          <% data.directories.children.forEach(dir => { %>
+            <div class="folder">
+              <p class="folder-legend"><%= dir.name %>
+                 <!-- <img src="/icons/folder.svg" alt="folder icon"> -->
+                </p>
+
+              <div class="folder-options">
+                <a class="open-folder-link" href="/main/explorer/dir:<%= dir.id %>">open</a>
+                <a class="folder-options-link" href="/main/explorer/dirDetails:<%= dir.id %>">options</a>
+              </div>
+            </div>
+          <% }) %>
+        <% } %>
+        <% data.files.forEach(file => { %>
+          <a class="file" href="/main/explorer/file:<%= file.name %>">
+            <img src="/icons/file.svg" alt="file icon">
+            <p><%= file.name %></p>
+          </a>
+        <% }) %>
+      <% } else { %>
+        <p>There are no files or folders created yet. Start now!</p>
+      <% } %>
+    </div>
+  </main>
+
+  <%- include('footer') %>
+</body>
+</html>

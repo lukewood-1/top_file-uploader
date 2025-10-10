@@ -16,11 +16,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({extended: true}));
 setUpAuth(app);
 
-app.use('/upload', mainRouter);
+app.use('/main', mainRouter);
 app.use('/access', accessRouter);
 app.use('/', indexRouter);
+
+const pathUtil = {
+  __dirname,
+  __filename
+};
 
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Listening to port ${PORT}`);
 })
+
+export default pathUtil

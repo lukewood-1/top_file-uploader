@@ -1,27 +1,36 @@
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log in - file uploader</title>
-  </head>
-  <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log in - file uploader</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <%- include('header') %>
+
+  <main>
     <h1>log in</h1>
 
+    <%- include('errors') %>
     <form method="POST" action="/access/log-in">
       <div>
         <label for="username">username: </label>
-        <input type="text" id="username" name="username" />
+        <input type="text" id="username" name="username" value="lukewood1" />
       </div>
 
       <div>
         <label for="password">password: </label>
-        <input type="password" id="password" name="password" />
+        <input type="password" id="password" name="password" value="Ilovedoingthis1" />
       </div>
 
       <button type="submit">Log in</button>
     </form>
     
     <a href="/">back</a>
-  </body>
-  </html>
+
+  </main>
+
+  <%- include('footer') %>
+</body>
+</html>

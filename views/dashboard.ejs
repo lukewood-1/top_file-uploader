@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>File Uploader</title>
+  <title>File explorer - dashboard</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <%- include('header') %>
 
   <main>
-    <h1><a href="access/log-in">Log</a> in this thing, mang</h1>
+    <a href="/main/upload">Upload File</a>
+    <a href="/main/explorer/dir:<%= rootFolderId %>">Manage your files</a>
   </main>
 
   <%- include('footer') %>

@@ -4,31 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>sign-up - file uploader</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h1>Register to have access</h1>
+  <%- include('header') %>
 
-  <%- include('errors') %>
+  <main>
+    <h1>Register to have access</h1>
 
-  <form method='POST' action="/access/sign-up">
-    <div>
-      <label for="username">username: </label>
-      <input type="text" id="username" name="username" />
-    </div>
+    <%- include('errors') %>
 
-    <div>
-      <label for="password">password: </label>
-      <input type="password" id="password" name="password">
-    </div>
+    <form method='POST' action="/access/sign-up">
+      <div>
+        <label for="username">username: </label>
+        <input type="text" id="username" name="username" />
+      </div>
 
-    <div>
-      <label for="confirm-password">confirm password</label>
-      <input type="password" id="confirm-password" name="confirm-password" />
-    </div>
+      <div>
+        <label for="password">password: </label>
+        <input type="password" id="password" name="password">
+      </div>
 
-    <button type="submit">sign up</button>
-  </form>
+      <div>
+        <label for="confirm-password">confirm password</label>
+        <input type="password" id="confirm-password" name="confirm-password" />
+      </div>
 
-  <a href="/">back</a>
+      <button type="submit">sign up</button>
+    </form>
+
+    <a href="/">back</a>
+
+  </main>
+
+  <%- include('footer') %>
 </body>
 </html>

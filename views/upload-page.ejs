@@ -3,21 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>upload file - file uploader</title>
+  <link rel="stylesheet" href="/style.css">
+  <title>File Uploader - upload file</title>
   <script src="/fileFilter.js" defer></script>
 </head>
 <body>
   <%- include('header') %>
 
-  <form action="/upload" method="post">
-    <fieldset>
-      <legend>Upload your stuff</legend>
+  <main>
+    <%- include('upload-form') %>
 
-      <label class="fileLabel" for="upload-file">max size: 512kb</label>
-      <input type="file" name="upload-file" id="upload-file" />
-    </fieldset>
-  </form>
+    <a href="/main/dashboard">back</a>
+  </main>
 
-  <a href="/">back</a>
+
+  <%- include('footer') %>
 </body>
 </html>

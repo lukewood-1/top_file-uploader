@@ -1,10 +1,23 @@
-  <form action="/upload" method="post" enctype="multipart/form-data">
+<div class="upload-center">
+
+  <form action="/main/upload" method="post" enctype="multipart/form-data">
     <fieldset>
       <legend>Upload your stuff</legend>
 
-      <label class="fileLabel" for="uploadFile">max size: 512kb</label>
+      <label class="fileLabel" for="upload-file">max size: 512kb</label>
       <input type="file" name="file" id="upload-file" />
+
+      <% if(directories.length > 0){ %>
+        <label for="folder-id">folder: </label>
+        <select name="folderId" id="folder-id">
+          <% directories.forEach(dir => { %>
+            <option value="<%= dir.id %>"><%= dir.name %></option>
+          <% }) %>
+        </select>
+      <% } %>
 
       <button type="submit">submit file</button>
     </fieldset>
   </form>
+
+</div>

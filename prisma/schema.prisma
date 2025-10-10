@@ -4,6 +4,8 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// Summary: users necessarity upload their files into the File model. They can also create folders, which will belong to themselves only, and they can associate their files to ONE of their created folders.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,24 +16,47 @@ datasource db {
 }
 
 model Session {
-  id String @id
-  sid String @unique
-  data String
+  id        String   @id
+  sid       String   @unique
+  data      String
   expiresAt DateTime
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  username String @db.VarChar(255) @unique
-  password String @db.VarChar(255) @unique
+  id       Int    @id @default(autoincrement())
+  username String @unique @db.VarChar(255)
+  password String @unique @db.VarChar(255)
 
-  files File[]
+  files   File[]
+  folders Folder[]
 }
 
 model File {
-  id Int @id @default(autoincrement())
-  file Bytes
+  id         Int   @id @default(autoincrement())
+  name       String @db.VarChar(255)
+  file       Bytes
+  uploadTime String
+  uploadDate String
+  size String
+  path String @db.VarChar(255)
 
-  owner Int 
-  userId User @relation(fields: [owner], references: [id])
+  fileOwner Int
+  userId    User @relation(fields: [fileOwner], references: [id])
+
+  fileFolder Int
+  folderId   Folder? @relation(fields: [fileFolder], references: [id])
+}
+
+model Folder {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+
+  files File[]
+
+  folderOwner Int
+  userId      User @relation(fields: [folderOwner], references: [id])
+
+  parentId Int?
+  parentFolder Folder? @relation("folderHierarchy", fields: [parentId], references: [id])
+  children Folder[] @relation("folderHierarchy")
 }

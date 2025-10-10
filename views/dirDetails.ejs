@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folder Details - <%= folder.name %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <%- include('header') %>
+
+  <main>
+    <h2><img src="/icons/folder.svg" alt="folder icon"> <%= folder.name %></h2>
+
+    <div>
+      <% if(folder.parent.id){ %>
+        <p>Parent folder: <a href="/main/explorer/dirDetails:<%= folder.parent.id %>"><%= folder.parent.name %></a></p>
+      <% } else { %>
+        <p>Parent folder: none. This is the root folder.</p>
+      <% } %>
+      <div>
+        <ul>
+          <h3>Files</h3>
+          <% folder.fileList.forEach(file => { %>
+            <li><a href="/main/explorer/file:<%= file.id %>"><%= file.name %></a></li>
+          <% }) %>
+        </ul>
+
+        <ul>
+          <h3>Child folders</h3>
+          <% folder.children.forEach(child => { %>
+            <li><a href="/main/explorer/dirDetails:<%= child.id %>"><%= child.name %></a></li>
+          <% }) %>
+        </ul>
+      </div>
+
+    </div>
+
+    <button>
+      <form action="/main/deleteFolder" method="post">
+        <input type="text" name="folderId" value="<%= folder.id %>" hidden />
+        <input type="text" name="parentId" value="<%= folder.parent.id %>" hidden />
+
+        <button type="button" popovertarget="confirm-delete-folder" popovertargetaction="show">Delete folder</button>
+
+        <dialog popover id="confirm-delete-folder">
+          <h2>All of folder's files and child folders will be moved to its parent(<%= folder.parent.name %>). Confirm?</h2>
+
+          <div>
+            <button type="submit">yes</button>
+            <button type="button" popovertarget="confirm-delete-folder" popovertargetaction="hide">no</button>
+          </div>
+        </dialog>
+      </form>
+    </button>
+
+    <div>
+      <h2>Rename folder</h2>
+
+      <form action="/main/renameFolder" method="post">
+        <div>
+          <label for="newFolderName">From '<%= folder.name %>' to: </label>
+          <input type="text" id="newFolderName" name="newFolderName" />
+        </div>
+
+        <input type="text" name="folderId" value="<%= folder.id %>" hidden />
+
+        <button type="submit">Rename</button>
+      </form>
+    </div>
+
+    <div>
+      <h2>Move folder to another parent</h2>
+      
+      <form action="/main/switchFolderParent" method="post">
+        <label for="chosenFolder">Move where?</label>
+        <select name="chosenFolder" id="chosenFolder">
+          <% folder.userFolders.forEach( f => { %>
+            <option value="<%= f.id %>"><%= f.name %></option>
+          <% }) %>
+        </select>
+
+        <input type="text" name="folderId" value="<%= folder.id %>" hidden />
+        <button type="submit">Move</button>
+      </form>
+    </div>
+
+    <button><a href="/main/explorer/dir:<%= folder.parent.id ? folder.parent.id : folder.id %>">Back</a></button>
+
+  </main>
+
+  <%- include('footer') %>
+</body>
+</html>
