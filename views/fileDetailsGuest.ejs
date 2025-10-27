@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared file - <%= file.name %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <%- include('header') %>
+  <%- include('flashMessages') %>
+
+  <main>
+    <div class="file-details">
+      <div class="window-wrapper file-page">
+        <a href="/share?dir=<%= file.assFolder.link %>" class="back-btn">
+          <img class="icon" src="/icons/back.svg" alt="">
+        </a>
+        <p class="file-title">File - <%= file.name %></p>
+      </div>
+
+      <div class="contents-wrapper">
+        <div class="file-portrait">
+          <p><%= file.name %></p>
+        </div>
+
+        <div class="file-stats">
+          <ul>
+            <li>Name: <%= file.name %></li>
+            <li>Size: <%= file.size %></li>
+            <li>Upload date: <%= file.uploadDate %></li>
+            <li>Upload time: <%= file.uploadTime %></li>
+            <li>
+              <div class="file-buttons">
+                <a href="/main/download/file:<%= file.id %>"><button type="button"><img class="icon" src="/icons/down.svg" alt=""> Download file</button></a>
+                <a href="/share?dir=<%= file.assFolder.link %>"><button type="button"><img class="icon" src="/icons/back.svg" alt=""> Back</button></a>
+              </div>
+            </li>
+          </ul>
+        </div>
+    </div>
+    </div>
+  </main>
+
+  <%- include('footer') %>
+</body>
+</html>

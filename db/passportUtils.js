@@ -1,11 +1,11 @@
-import database from "./db.js";
-import db from "./queries.js";
 import bcrypt from 'bcrypt';
 import passport from "passport";
 import { Strategy } from "passport-local";
 import session from "express-session";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { PrismaClient } from "@prisma/client";
+import orm from "./dbClient.js";
+import flash from 'connect-flash';
 
 const store = new PrismaSessionStore(
   new PrismaClient(),
@@ -28,13 +28,17 @@ const mySession = {
 
 async function verify(username, password, done){
   try {
-    const { rows } = await database.query('SELECT * FROM "User" WHERE username = $1', [username]);
-    const user = rows[0];
+    const user = await orm.user.findFirst({
+      where: {
+        username: username
+      }
+    });
+
 
     if(!user){
       return done(null, false, {message: 'Incorrect username'});
     }
-    const match = bcrypt.compare(user.password, password);
+    const match = await bcrypt.compare(password, user.password);
     if(!match){
       return done(null, false, {message: 'Incorrect password'});
     }
@@ -50,8 +54,11 @@ const serialize = (user, done) => {
 
 const deserialize = async (id, done) => {
   try {
-    const { rows } = await database.query('SELECT * FROM "User" WHERE id = $1', [id]);
-    const user = rows[0];
+    const user = await orm.user.findUnique({
+      where: {
+        id: id
+      }
+    });
 
     done(null, user);
   } catch (err) {
@@ -62,6 +69,7 @@ const deserialize = async (id, done) => {
 async function setUpAuth(router){
   router.use(session(mySession));
   router.use(passport.session());
+  router.use(flash())
 
   passport.use(new Strategy(verify));
   passport.serializeUser(serialize);

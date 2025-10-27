@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "shareableLink" ADD COLUMN     "expirationDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

@@ -1,13 +1,13 @@
 import { Router } from "express";
 import accessCtrl from "../controllers/accessCtrl.js";
 import passport from "passport";
-import { getUser } from "../db/passportUtils.js";
+// import { getUser } from "../db/passportUtils.js";
 
 const accessRouter = Router();
 
-accessRouter.post('/log-in', getUser, passport.authenticate('local', {
+accessRouter.post('/log-in', accessCtrl.authLogin, passport.authenticate('local', {
   successRedirect: '/main/dashboard',
-  failureRedirect: '/access/log-in'
+  failureRedirect: '/access/log-in',
 }));
 accessRouter.post('/sign-up', accessCtrl.signUpPost);
 accessRouter.get('/log-in', accessCtrl.logInGet);

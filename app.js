@@ -5,6 +5,7 @@ import indexRouter from './routers/indexRouter.js';
 import accessRouter from './routers/accessRouter.js';
 import mainRouter from './routers/mainRouter.js';
 import { setUpAuth, serialize, deserialize, getUser } from './db/passportUtils.js';
+import shareRouter from './routers/shareRouter.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({extended: true}));
 setUpAuth(app);
 
+app.use('/share', shareRouter);
 app.use('/main', mainRouter);
 app.use('/access', accessRouter);
 app.use('/', indexRouter);

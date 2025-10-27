@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shared folder - <%= data.directories.current.name %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <%- include('header') %>
+  <%- include('flashMessages') %>
+
+  <main>
+    <div class="directory-view">
+      <div class="window-wrapper"><p class="file-title">Folder - <%= data.directories.current.name %> <img class="icon" src="/icons/folder.svg" alt="folder icon"></p></div>
+
+        <% if(data.files.length > 0 || data.directories.children.length > 0){ %>
+          <div class="directory-view-wrapper">
+            <% data.files.forEach(file => { %>
+              <div class="file">
+                <p class="file-legend"><%= file.name %></p>
+
+                <a class="file-options" href="/share?dir=<%= data.directories.current.link %>&fileId=<%= file.id %>">options</a>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <p class="empty-folder-notice">This folder is empty. Maybe ask your buddy to share something other than an empty folder next time...</p>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <%- include('footer') %>
+</body>
+</html>

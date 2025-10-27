@@ -1,6 +1,7 @@
 import { body, validationResult } from "express-validator";
-import bcrypt from 'bcrypt';
-import { orm } from "../db/queries.js"; 
+import bcrypt, { compare } from 'bcrypt';
+import orm from "../db/dbClient.js"; 
+import { fetchUtils } from "./mainCtrl.js";
 
 // Error messages for the validation chains
 const alphaNumErr = field => `${field} must contain only letters and numbers`;
@@ -34,7 +35,7 @@ const doPasswordsMatch = (value, {req}) => {
   return true
 }
 
-const validate = [
+const validateSignup = [
   body('username').trim()
   .notEmpty()
   .isAlphanumeric().withMessage(alphaNumErr('username'))
@@ -51,10 +52,9 @@ const validate = [
 ]
 
 const signUpPost = [
-  validate,
+  validateSignup,
   async (req, res, next) => {
     const { username, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
       const errors = validationResult(req);
@@ -64,25 +64,13 @@ const signUpPost = [
         return;
       }
 
-      const topId = await orm.user.findFirst({
-        orderBy: {
-          id: 'desc'
-        },
-        select: {
-          id: true
-        }
-      });
-      console.log('topId: ', topId);
-
-      const topFolder = await orm.folder.findFirst();
-
+      const hashedPassword = await bcrypt.hash(password, 10);
       const newUser = await orm.user.create({
         data: {
           username: username,
           password: hashedPassword,
         }
       });
-      console.log('newUser: ', newUser);
 
       const newFolder = await orm.folder.create({
         data: {
@@ -111,18 +99,50 @@ async function logOutGet(req, res, next){
 };
 
 const logInGet = (req, res) => {
-  res.render('log-in');
+  res.render('log-in', {
+    messages: req.flash(),
+  });
 }
 
 const signUpGet = (req, res) => {
   res.render('sign-up')
 };
 
+const authLogin = async (req, res, next) => {
+  const { username, password } = req.body;
+
+  const user = await orm.user.findFirst({
+    where: {
+      username
+    }
+  });
+
+  if(!user){
+    fetchUtils.genFlashMsg(req, 'fail', 'Incorrect username', `We did not find a username called ${username}`);
+    res.render('log-in', {
+      messages: req.flash(),
+    });
+    return;
+  }
+  
+  const match = await compare(password, user.password);
+  if(!match){
+    fetchUtils.genFlashMsg(req, 'fail', 'Incorrect password', `The password entered for ${username} is incorrect`);
+    res.render('log-in', {
+      messages: req.flash(),
+    });
+    return;
+  } else {
+    next();
+  }
+}
+
 const accessCtrl = {
   logInGet,
   logOutGet,
   signUpGet,
-  signUpPost
+  signUpPost,
+  authLogin
 }
 
 export default accessCtrl

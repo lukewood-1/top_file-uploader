@@ -1,7 +1,8 @@
-import { orm } from "../db/queries.js";
+import orm from "../db/dbClient.js";
 import fs from 'fs/promises';
 import path from 'path';
 import pathUtil from "../app.js";
+import bcrypt from 'bcrypt';
 
 const hrSize = num => (
   num > 1024 ? `${parseInt(num / 1024)}KB`
@@ -39,7 +40,6 @@ async function uploadPageGet(req, res){
       folderOwner: req.user.id
     }
   });
-  console.log('userFolders: ', userFolders);
   const directories = [];
   for await(const dir of userFolders){
     const obj = {};
@@ -47,7 +47,6 @@ async function uploadPageGet(req, res){
     obj.name = dir.name.split('_')[1];
     directories.push(obj);
   }
-  console.log('directories: ', directories);
 
   res.render('upload-page', {
     user: req.user,
@@ -56,15 +55,11 @@ async function uploadPageGet(req, res){
 }
 
 async function uploadPagePost(req, res){
-  // console.log('req.body: ', req.body);
-  // console.log('req.file: ', req.file);
-  // console.log('user: ', req.user);
   const { folderId } = req.body;
   let filename = req.file.filename.split('-')[2];
   const filepath = `${path.join(pathUtil.__dirname, 'public', 'uploads')}/${req.file.filename}`;
   const file = await fs.readFile(filepath);
 
-  console.log('folderId: ', folderId);
 
   const date = new Date(),
     format = num => num >= 10 ? num : '0' + num,
@@ -88,7 +83,6 @@ async function uploadPagePost(req, res){
     folderId: { connect: {id: folderId ? +folderId : 1 } },
     path: req.file.path 
   };
-  console.log('newFile obj: ', data);
 
 
   await orm.file.create({
@@ -98,7 +92,7 @@ async function uploadPagePost(req, res){
   res.redirect('/main/dashboard');
 }
 
-const explorerDir = async (req, res) => {
+const explorerDirData = async dirId => {
   const data = {
     directories: {
       current: {},
@@ -108,13 +102,10 @@ const explorerDir = async (req, res) => {
     files: []
   };
 
-  const { dirId } = req.params;
-  console.log('dirId: ', dirId);
-
   try {
     const targetFolder = await orm.folder.findUnique({
       where: {
-        id: +dirId[1]
+        id: dirId
       },
       include: {
         files: true,
@@ -136,17 +127,16 @@ const explorerDir = async (req, res) => {
     }
 
     data.directories.parent = parentFolder;
-    // console.log('parentFolder: ', parentFolder);
 
     const dirObj = {};
     dirObj.name = targetFolder.name.split('_')[1];
-    dirObj.id = +dirId[1];
+    dirObj.id = dirId;
     data.directories.current = dirObj;
 
     for await(const file of targetFolder.files){
       const fileObj = {};
       fileObj.id = file.id;
-      fileObj.name = `${file.id}_${file.name}`;
+      fileObj.name = file.name;
       data.files.push(fileObj);
     }
 
@@ -157,18 +147,16 @@ const explorerDir = async (req, res) => {
       folderObj.name = dir.name.split("_")[1];
 
       data.directories.children.push(folderObj);
-      // console.log('folderObj: ', folderObj);
     }
 
     const allUserFolders = await orm.folder.findMany({
       where: {
-        folderOwner: req.user.id
+        folderOwner: targetFolder.folderOwner
       }
     });
 
     const userDirs = [];
     for await(const d of allUserFolders){
-      // console.log('d: ', d);
       const obj = {};
       obj.id = d.id;
       obj.name = d.name.split('_')[1];
@@ -176,9 +164,18 @@ const explorerDir = async (req, res) => {
     };
     data.directories.userFolders = userDirs;
 
-    // console.log('data obj: ', data);
+    return data
+  } catch (e) {
+    console.error(e);
+  }
+}
 
-    res.render('file-explorer', {
+const explorerDir = async (req, res) => {
+  const { dirId } = req.params;
+  try {
+    const data = await explorerDirData(+dirId.slice(1));
+
+    res.render('fileExplorer', {
       user: req.user,
       data: data
     })
@@ -187,115 +184,121 @@ const explorerDir = async (req, res) => {
   }
 }
 
+const dirStatsData = async (req, dirId) => {
+  try {
+    const query = await orm.folder.findUnique({
+      where: {
+        id: dirId
+      }
+    });
+
+    let parent;
+
+    if(query.parentId){
+      parent = await orm.folder.findUnique({
+        where: {
+          id: query.parentId
+        }
+      });
+    } else {
+      parent = {
+        name: 'home'
+      }
+    }
+
+    const assFiles = await orm.file.findMany({
+      where: {
+        fileFolder: query.id
+      }
+    });
+
+    const userFolderQuery = await orm.folder.findMany({
+      where: {
+        folderOwner: req.user.id
+      }
+    });
+    const userFolders = userFolderQuery.filter(record => record.id !== query.id);
+
+    const folders = [];
+    for await(const folder of userFolders){
+      if(folder.id === query.parentId){
+        continue;
+      }
+
+      const obj = {
+        id: folder.id,
+        name: folder.name.split('_')[1]
+      };
+      folders.push(obj);
+    };
+
+    const fileArr = [] ;
+    for await(const file of assFiles){
+      const obj = {};
+      obj.id = file.id;
+      obj.name = file.name;
+      fileArr.push(obj);
+    };
+
+    const assFolders = await orm.folder.findMany({
+      where: {
+        parentId: query.id
+      }
+    });
+
+    const children = [];
+    for await(const child of assFolders){
+      const obj = {};
+      obj.id = child.id;
+      obj.name = child.name.split('_')[1];
+      children.push(obj);
+    }
+
+    const folder = {
+      id: query.id,
+      name: query.name.split('_')[1],
+      parent: {
+        id: parent.id,
+        name: parent.name.split('_')[1]
+      },
+      children,
+      userFolders: folders,
+      fileList: fileArr
+    };
+
+    return folder;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 const dirStats = async (req, res) => {
   const { dirId } = req.params;
 
-  const query = await orm.folder.findUnique({
-    where: {
-      id: +dirId[1]
-    }
-  });
+  try {
+    const folder = await dirStatsData(req, +dirId.slice(1));
 
-  let parent;
-
-  if(query.parentId){
-    parent = await orm.folder.findUnique({
-      where: {
-        id: query.parentId
-      }
-    });
-  } else {
-    parent = {
-      name: 'home'
-    }
+    res.render('dirDetails', {
+      user: req.user,
+      folder
+    })
+  } catch (e) {
+    console.error(e);
   }
-
-  const assFiles = await orm.file.findMany({
-    where: {
-      fileFolder: query.id
-    }
-  });
-
-  const userFolderQuery = await orm.folder.findMany({
-    where: {
-      folderOwner: req.user.id
-    }
-  });
-  const userFolders = userFolderQuery.filter(record => record.id !== query.id);
-  console.log('userFolders: ', userFolders, 'parentId: ', query.parentId);
-
-  const folders = [];
-  for await(const folder of userFolders){
-    console.log('folder: ', folder);
-    if(folder.id === query.parentId){
-      console.log('continuing...');
-      continue;
-    }
-
-    const obj = {
-      id: folder.id,
-      name: folder.name.split('_')[1]
-    };
-    folders.push(obj);
-  };
-
-  const fileArr = [] ;
-  for await(const file of assFiles){
-    const obj = {};
-    console.log('file: ', file);
-    obj.id = file.id;
-    obj.name = file.name;
-    fileArr.push(obj);
-  };
-
-  const assFolders = await orm.folder.findMany({
-    where: {
-      parentId: query.id
-    }
-  });
-
-  const children = [];
-  for await(const child of assFolders){
-    const obj = {};
-    obj.id = child.id;
-    obj.name = child.name.split('_')[1];
-    children.push(obj);
-  }
-
-  const folder = {
-    id: query.id,
-    name: query.name.split('_')[1],
-    parent: {
-      id: parent.id,
-      name: parent.name.split('_')[1]
-    },
-    children,
-    userFolders: folders,
-    fileList: fileArr
-  };
-  console.log('folder obj: ', folder);
-
-  res.render('dirDetails', {
-    user: req.user,
-    folder
-  })
 }
 
-const explorerFile = async (req, res) => {
-  const { fileId } = req.params;
-  const query = await orm.file.findFirst({
+const explorerFileData = async fileId => {
+  const query = await orm.file.findUnique({
     where: {
-      id: +fileId.split('_')[0][1]
+      id: fileId
     }
   });
-  // console.log('query result: ', query);
 
   const assFolder = await orm.folder.findFirst({
     where: {
       id: query.fileFolder
     }
   });
-  console.log('assFolder: ', assFolder);
 
   const stats = {
     name: query.name,
@@ -309,64 +312,109 @@ const explorerFile = async (req, res) => {
       name: assFolder.name.split('_')[1]
     }
   }
-  // console.log('file stats for explorer page: ', stats);
+  
+  return stats
+}
+
+const explorerFileData_folders = async folderOwnerId => {
+  const folders = await orm.folder.findMany({
+    where: {
+      folderOwner: folderOwnerId
+    }
+  });
+
+  const folderData = [];
+  for await(const f of folders){
+    const obj = {
+      id: f.id,
+      name: f.name.split('_')[1]
+    };
+    folderData.push(obj);
+  }
+
+  return folderData
+};
+
+const explorerFile = async (req, res) => {
+  const { fileId } = req.params;
+
+  const data = await explorerFileData(+fileId.slice(1));
+
+  const folderData = await explorerFileData_folders(data.fileOwner);
 
   res.render('fileDetails', {
-    file: stats,
-    user: req.user
+    file: data,
+    user: req.user,
+    folders: folderData
   });
 }
 
 const createFolder = async (req, res) => {
   const { newFolder, parentFolder, userRootFolder } = req.body;
-  console.log('newFolder: ', newFolder, 'parentFolder: ', parentFolder, 'userRootFolder: ', userRootFolder);
 
-  await orm.folder.create({
-    data: {
-      name: `${req.user.username}_${newFolder}`,
-      userId: {connect: {id: req.user.id}},
-      parentFolder: {connect: {id: +parentFolder}}
-    }
-  });
+  try {
+    const target = await orm.folder.create({
+      data: {
+        name: `${req.user.username}_${newFolder}`,
+        userId: {connect: {id: req.user.id}},
+        parentFolder: {connect: {id: +parentFolder}}
+      }
+    });
 
-  res.redirect(`/main/explorer/dir:${userRootFolder}`);
+    const data = await explorerDirData(+userRootFolder);
+
+    req.flash('success', true);
+    req.flash('successContent', `folder '${newFolder}' created and placed under the '${data.directories.parent ? data.directories.parent.name : 'home'}`);
+    req.flash('successTitle', 'Folder created!');
+
+    res.render('fileExplorer', {
+      user: req.user,
+      data,
+      messages: req.flash()
+    });
+  } catch (e){
+    console.error(e);
+  }
 }
 
 const sendClientFile = async (req, res) => {
   const { fileId } = req.params;
-  console.log('fileId: ', fileId);
 
   const query = await orm.file.findUnique({
     where: {
-      id: +fileId[1]
+      id: +fileId.slice(1)
     }
   });
-  console.log('query: ', query);
 
 
   const fileName = path.join(pathUtil.__dirname, query.path);
-  console.log('filename: ', fileName);
 
-  res.download(query.path, 'readme.md', err => {
+  res.download(query.path, query.name, err => {
     if(err) {
       console.error('download error', err);
     } else {
-      console.log('file downloaded successfully')
+      console.log(`file ${query.name} downloaded successfully by address ${req.host}`)
     }
   });
 }
 
 const deleteFile = async (req, res) => {
   const { fileId, fileFolder } = req.body;
-  console.log('fileId: ', fileId, '; fileFolder: ', fileFolder);
 
+  let target;
+  const oldTarget = await orm.file.findUnique({
+    where: {
+      id: +fileId
+    }
+  });
   try {
-    await orm.file.delete({
+    target = await orm.file.delete({
       where: {
         id: +fileId
       }
     });
     
+    req.flash('success', `file ${oldTarget.name} deleted.`);
     res.redirect(`/main/explorer/dir:${+fileFolder}`);
   } catch (error) {
     console.error(error)
@@ -375,70 +423,125 @@ const deleteFile = async (req, res) => {
 
 const renameFile = async (req, res) => {
   const { fileId, renameInput, fileFolder } = req.body;
-  console.log('fileId: ', fileId, '; renameinput: ', renameInput, '; fileFolder: ', fileFolder);
+  let target;
+  let oldTarget;
 
-  await orm.file.update({
-    where: {
-      id: +fileId
-    },
-    data: {
-      name: renameInput
+  try {
+    oldTarget = await orm.file.findUnique({
+      where: {
+        id: +fileId
+      }
+    });
+
+    let fileData;
+    let folderData;
+    if(renameInput.length === 0){
+      req.flash('fail', true);
+      req.flash('failTitle', 'Could not rename file');
+      req.flash('failContent', 'You cannot rename a file to an empty label');
+      fileData = await explorerFileData(+fileId);
+      folderData = await explorerFileData_folders(fileData.fileFolder);
+
+      res.render('fileDetails', {
+        user: req.user,
+        file: fileData,
+        messages: req.flash(),
+        folders: folderData
+      });
+      return;
     }
-  });
 
-  res.redirect(`/main/explorer/dir:${+fileFolder}`);
+    target = await orm.file.update({
+      where: {
+        id: +fileId
+      },
+      data: {
+        name: renameInput
+      }
+    });
+
+    fileData = await explorerFileData(+fileId);
+    folderData = await explorerFileData_folders(fileData.fileFolder);
+
+    req.flash('success', true);
+    req.flash('successTitle', 'File rename - success');
+    req.flash('successContent', `file '${oldTarget.name}' is now named '${renameInput}'.`);
+    res.render('fileDetails', {
+      user: req.user,
+      file: fileData,
+      messages: req.flash(),
+      folders: folderData
+    });
+  } catch(e) {
+    console.error(e);
+  }
 }
 
 const deleteFolder = async (req, res) => {
   const { folderId, parentId } = req.body;
-  console.log('target and parent ID: ', folderId, parentId);
 
-  const childDirs = await orm.folder.findMany({
-    where: {
-       parentId: +folderId
+  try {
+    if(!parentId){
+      genFlashMsg(req, 'fail', 'No deleting root folder', "This is your root folder. It is crucial to the system, so you can delete anything but it.");
+
+      const data = await explorerDirData(+folderId);
+      res.render('fileExplorer', {
+        user: req.user,
+        data,
+        messages: req.flash()
+      });
+      return;
     }
-  });
 
-  for await(const cDir of childDirs){
-    await orm.folder.update({
+    const childDirs = await orm.folder.findMany({
       where: {
-        id: cDir.id
-      },
-      data: {
-        parentId: +parentId
+        parentId: +folderId
       }
-    })
-  };
+    });
 
-  const files = await orm.file.findMany({
-    where: {
-      fileFolder: +folderId
-    }
-  });
+    for await(const cDir of childDirs){
+      await orm.folder.update({
+        where: {
+          id: cDir.id
+        },
+        data: {
+          parentId: +parentId
+        }
+      })
+    };
 
-  for await(const file of files){
-    await orm.file.update({
+    const files = await orm.file.findMany({
       where: {
-        id: file.id
-      },
-      data: {
-        fileFolder: +parentId
+        fileFolder: +folderId
       }
-    })
-  };
+    });
 
-  await orm.folder.delete({
-    where: {
-      id: +folderId
-    }
-  });
+    for await(const file of files){
+      await orm.file.update({
+        where: {
+          id: file.id
+        },
+        data: {
+          fileFolder: +parentId
+        }
+      })
+    };
 
-  res.redirect(`/main/explorer/dir:${+parentId}`)
+    await orm.folder.delete({
+      where: {
+        id: +folderId
+      }
+    });
+
+    res.redirect(`/main/explorer/dir:${+parentId}`)
+
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 const renameFolder = async (req, res) => {
   const { folderId, newFolderName } = req.body;
-  console.log('renameFOlder: ', folderId, newFolderName);
 
   const result = await orm.folder.update({
     where: {
@@ -448,21 +551,18 @@ const renameFolder = async (req, res) => {
       name: `${req.user.username}_${newFolderName}`
     }
   });
-  console.log('new record: ', result);
 
   res.redirect(`/main/explorer/dirDetails:${+folderId}`);
 }
 
 const switchFolderParent = async (req, res) => {
   const { folderId, chosenFolder } = req.body;
-  // console.log('switchFolderParent: ', folderId, chosenFolder);
 
   const target = await orm.folder.findUnique({
     where: {
       id: +folderId
     }
   });
-  // console.log('target: ', target);
 
   await orm.folder.update({
     where: {
@@ -474,6 +574,78 @@ const switchFolderParent = async (req, res) => {
   });
 
   res.redirect(`/main/explorer/dirDetails:${+folderId}`);
+}
+
+const shareFolder = async (req, res) => {
+  const { folderId } = req.body;
+
+  try {
+    const query = await orm.shareableLink.create({
+      data: {
+        userId: {connect: {id: req.user.id }},
+        folderId: {connect: {id: +folderId}}
+      }
+    });
+
+    req.flash('notification', true);
+    req.flash('notificationTitle', 'shareable link generated! Link to your folder:');
+    req.flash('notificationContent', `http://${req.get('host')}/share:${query.link}`);
+
+    const folderData = await dirStatsData(req, +folderId);
+
+    res.render('dirDetails', {
+      user: req.user,
+      folder: folderData,
+      messages: req.flash()
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+const switchFileFolder = async (req, res) => {
+  const { fileId, newFileFolder } = req.body;
+  console.log('fileId and newFileFolder: ', fileId, newFileFolder);
+
+  await orm.file.update({
+    where: {
+      id: +fileId
+    },
+    data: {
+      fileFolder: +newFileFolder
+    }
+  });
+
+  const file = await explorerFileData(+fileId);
+
+  const targetFile = await orm.file.findUnique({
+    where: {
+      id: +fileId
+    }
+  });
+
+  const fileFolder = await orm.folder.findUnique({
+    where: {
+      id: targetFile.fileFolder
+    }
+  });
+  console.log('targetFile: ', targetFile, 'fileFolder: ', fileFolder);
+  const folders = await explorerFileData_folders(file.fileOwner);
+
+  genFlashMsg(req, 'success', 'file moved!', `file ${file.name} belongs now to ${fileFolder.name.split('_')[1]}`);
+
+  res.render('fileDetails', {
+    user: req.user,
+    file,
+    folders,
+    messages: req.flash()
+  })
+}
+
+const genFlashMsg = async (req, method, title, content) => {
+  req.flash(method, true);
+  req.flash(`${method}Title`, title);
+  req.flash(`${method}Content`, content);
 }
 
 const mainCtrl = {
@@ -489,7 +661,16 @@ const mainCtrl = {
   dirStats,
   deleteFolder,
   renameFolder,
-  switchFolderParent
+  switchFolderParent,
+  shareFolder,
+  switchFileFolder
+}
+
+export const fetchUtils = {
+  explorerDirData,
+  explorerFileData,
+  dirStatsData,
+  genFlashMsg
 }
 
 export default mainCtrl

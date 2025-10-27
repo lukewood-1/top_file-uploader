@@ -10,10 +10,12 @@
   <%- include('header') %>
 
   <main>
+    <%- include('flashMessages') %>
+
     <h1>log in</h1>
 
     <%- include('errors') %>
-    <form method="POST" action="/access/log-in">
+    <form class="log-in-form" method="POST" action="/access/log-in">
       <div>
         <label for="username">username: </label>
         <input type="text" id="username" name="username" value="lukewood1" />
@@ -27,7 +29,7 @@
       <button type="submit">Log in</button>
     </form>
     
-    <a href="/">back</a>
+    <button><a href="/">back</a></button>
 
   </main>
 

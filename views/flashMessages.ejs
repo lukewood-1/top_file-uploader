@@ -1,0 +1,33 @@
+<% if(locals.messages){ %>
+  <% if(messages.success){ %>
+    <div class="alert success-alert">
+      <h3 class="title"><%= messages.successTitle %></h3>
+      <p><%= messages.successContent %></p>
+      <div class="progress-bar"></div>
+    </div>
+  <% } %>
+  <% if(messages.warning){ %>
+    <div class="alert warning-alert">
+      <h3 class="title"><%= messages.warningTitle %></h3>
+      <p><%= messages.warningContent %></p>
+      <div class="progress-bar"></div>
+    </div>
+  <% } %>
+  <% if(messages.fail){ %>
+    <div class="alert fail-alert">
+      <h3 class="title"><%= messages.failTitle %></h3>
+      <p><%= messages.failContent %></p>
+      <div class="progress-bar"></div>
+    </div>
+  <% } %>
+  <% if(messages.notification){ %>
+    <dialog class="notification">
+      <div>
+          <p><%= messages.notificationTitle %></p>
+          <p><%= messages.notificationContent %></p>
+
+          <button type="button">close</button>
+      </div>
+    </dialog>
+  <% } %>
+<% } %>

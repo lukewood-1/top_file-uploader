@@ -25,6 +25,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({storage: storage});
 
+mainRouter.post('/switchFileFolder', isAuth, mainCtrl.switchFileFolder);
+mainRouter.post('/share', isAuth, mainCtrl.shareFolder);
 mainRouter.post('/switchFolderParent', isAuth, mainCtrl.switchFolderParent);
 mainRouter.post('/renameFolder', isAuth, mainCtrl.renameFolder);
 mainRouter.post('/deleteFolder', isAuth, mainCtrl.deleteFolder);

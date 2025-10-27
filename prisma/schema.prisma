@@ -29,6 +29,7 @@ model User {
 
   files   File[]
   folders Folder[]
+  shareableLinks shareableLink[]
 }
 
 model File {
@@ -52,6 +53,7 @@ model Folder {
   name String @db.VarChar(255)
 
   files File[]
+  shareableLink shareableLink[]
 
   folderOwner Int
   userId      User @relation(fields: [folderOwner], references: [id])
@@ -59,4 +61,17 @@ model Folder {
   parentId Int?
   parentFolder Folder? @relation("folderHierarchy", fields: [parentId], references: [id])
   children Folder[] @relation("folderHierarchy")
+}
+
+model shareableLink {
+  id Int @id @default(autoincrement())
+  link String @default(uuid())
+
+  expirationDate DateTime @default(now())
+
+  sharedFolder Int
+  folderId Folder @relation(fields: [sharedFolder], references: [id])
+
+  linkOwner Int
+  userId User @relation(fields: [linkOwner], references: [id])
 }

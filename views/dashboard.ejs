@@ -10,8 +10,12 @@
   <%- include('header') %>
 
   <main>
-    <a href="/main/upload">Upload File</a>
-    <a href="/main/explorer/dir:<%= rootFolderId %>">Manage your files</a>
+    <div class="dashboard-btns">
+      <div>
+        <a class="button" href="/main/upload">File uploader</a>
+        <a class="button" href="/main/explorer/dir:<%= rootFolderId %>">File explorer</a>
+      </div>
+    </div>
   </main>
 
   <%- include('footer') %>

@@ -1,5 +1,3 @@
-import { orm } from "../db/queries.js";
-
 const indexGet = async (req, res) => {
   try {
     res.render('index', {

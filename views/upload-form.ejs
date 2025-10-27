@@ -4,11 +4,11 @@
     <fieldset>
       <legend>Upload your stuff</legend>
 
-      <label class="fileLabel" for="upload-file">max size: 512kb</label>
+      <label class="fileLabel" for="upload-file">Upload file</label>
       <input type="file" name="file" id="upload-file" />
 
       <% if(directories.length > 0){ %>
-        <label for="folder-id">folder: </label>
+        <label for="folder-id"> to folder </label>
         <select name="folderId" id="folder-id">
           <% directories.forEach(dir => { %>
             <option value="<%= dir.id %>"><%= dir.name %></option>
@@ -18,6 +18,13 @@
 
       <button type="submit">submit file</button>
     </fieldset>
+
+    <div class="uploaded-file-details" style="display: none">
+      <h3>Selected file details</h3>
+
+      <p>File name: <span class="uploaded-file-name">no file selected yet</span></p>
+      <p>File size: <span class="uploaded-file-size">max size per file: 512kb</span></p>
+    </div>
   </form>
 
 </div>
